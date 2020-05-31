@@ -2,7 +2,7 @@
 
 import Data.Char
 --import System.Environment
-import Data.List()
+import Data.List
 import Data.Tuple()
 import Data.Maybe
 
@@ -15,6 +15,11 @@ data Formula = Var String
  deriving Eq
 
 data Token = TVar String | TLParen | TRParen | TAnd | TOr | TNot | TImplies | TTurnstile | TComma | TBottom | TRule String | TNr Int deriving (Eq, Show);
+
+instance Ord Token where
+ compare (TNr a) (TNr b) | a < b = LT
+ compare (TNr a) (TNr b) | a > b = GT
+ compare _ _ = EQ 
 
 fstOfThree :: (a, b, c) -> a
 fstOfThree (t,_,_) = t
@@ -57,7 +62,7 @@ showTokensArray (t : tl) = showTokens t ++ "\n" ++ showTokensArray tl
 showMaybeTokensArray :: Maybe [[Token]] -> String
 showMaybeTokensArray Nothing = "No proof found."
 showMaybeTokensArray (Just []) = []
-showMaybeTokensArray (Just t) = showTokensArray (reverse t)
+showMaybeTokensArray (Just t) = showTokensArray  ( t)
 
 showTokensAndRule :: [Token] -> String -> String
 showTokensAndRule [] _ = []
@@ -78,6 +83,26 @@ instance Show Token where
  show TImplies = "->";
  show TTurnstile = "|-";
 -}
+
+canTokenize :: String -> Bool
+canTokenize ('|' : '-' : tl) =       (canTokenize tl)
+canTokenize ('(' : tl) =             (canTokenize tl)
+canTokenize (')' : tl) =             (canTokenize tl)
+canTokenize ('&' : tl) =             (canTokenize tl)
+canTokenize ('|' : tl) =             (canTokenize tl) 
+canTokenize ('!' : tl) =             (canTokenize tl)
+canTokenize ('-' : '>' : tl) =       (canTokenize tl)
+canTokenize (',' : tl) =             (canTokenize tl)
+canTokenize ('_' : '|' : '_' : tl) = (canTokenize tl)
+canTokenize (c : tl) | isAlpha c =   (canTokenize tl)
+canTokenize (c : tl) | isSpace c =   (canTokenize tl)
+canTokenize [] = True
+canTokenize _ = False
+
+isThereATurnistle :: String -> Bool
+isThereATurnistle [] = False
+isThereATurnistle ('|' : '-' : tl) = True
+isThereATurnistle (_:tl) = isThereATurnistle tl
 
 tokenize :: String -> [Token]
 tokenize [] = []
@@ -179,6 +204,7 @@ couldBeAnd t goal = couldBeAnd' t goal 0 0
 couldBeAnd' :: [Token] -> Int -> Int -> Int -> Bool
 couldBeAnd' (h:tl) goal index nots | (goal == index) = if ( ( (h==TAnd) && (nots `mod` 2 == 0)) || ( (h==TOr) && (nots `mod` 2 == 1)) ) then True else False 
 couldBeAnd' (h:tl) goal index nots | (h == TNot) = couldBeAnd' tl goal (index+1) (nots+1)
+couldBeAnd' (h:tl) goal index nots | (h == TRParen) = couldBeAnd' tl goal (index+1) (nots-1)
 couldBeAnd' (h:tl) goal index nots | (h == TComma) = couldBeAnd' tl goal (index+1) 0
 couldBeAnd' (h:tl) goal index nots = couldBeAnd' tl goal (index+1) nots
 couldBeAnd' _ _ _ _ = False
@@ -455,25 +481,28 @@ getMaxLineNr' :: [Token] -> Int -> Int
 getMaxLineNr' (h: tl) max = if ( (getNr h) > max ) then getMaxLineNr' tl (getNr h) else getMaxLineNr' tl max
 getMaxLineNr' [] max = max
 
+getMaxNrAsInt :: [[Token]] -> Int
+getMaxNrAsInt t = (getMaxLineNr' (getAllHeads t) 0)
+
 getAllHeads :: [[Token]] -> [Token]
 getAllHeads (h:tl) = (head h) : (getAllHeads tl)
 getAllHeads [] = []
 
 applyAllOnceInefficienty :: [[Token]] -> (Maybe [[Token]] , [Token] , [[Token]])
-applyAllOnceInefficienty t = applyAllOnce t t (TNr 1)
+applyAllOnceInefficienty t = applyAllOnce t [(TNr 1:(head t))] (TNr 1)
 
 applyAllOnce :: [[Token]] -> [[Token]] -> Token -> (Maybe [[Token]] , [Token] , [[Token]])
 applyAllOnce history (h : _ ) number | applyBackwardsAssumption (tail h)                                               = (Just ([]), [(TRule("(Assumption)"))], (history ))
-applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyBackwardsAndIntroduction)         = ( giveNumbers (applyBackwardsAndIntroduction         history (tail h)) number ,         [TRule ("- And Introduction over")]          ++ [(TNr ((getNr number)+1))] ++ [(TNr ((getNr number)+2))],                              (history ++ (fromJust(applyBackwardsAndIntroduction         history (tail h) ))) )
+applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyBackwardsAndIntroduction)         = ( giveNumbers (applyBackwardsAndIntroduction         history (tail h)) number ,         [TRule ("- And Introduction over")]          ++ [(TNr ((getNr number)+2))] ++ [(TNr ((getNr number)+1))],                              (history ++ (fromJust(applyBackwardsAndIntroduction         history (tail h) ))) )
 applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyBackwardsImplicationIntroduction) = ( giveNumbers (applyBackwardsImplicationIntroduction history (tail h)) number ,         [TRule ("- Implication Introduction over")]  ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyBackwardsImplicationIntroduction history (tail h) ))) )
 applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyBackwardsOrIntroduction1)         = ( giveNumbers (applyBackwardsOrIntroduction1         history (tail h)) number ,         [TRule ("- Or Introduction 1 over")]         ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyBackwardsOrIntroduction1         history (tail h) ))) )
 applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyBackwardsOrIntroduction2)         = ( giveNumbers (applyBackwardsOrIntroduction2         history (tail h)) number ,         [TRule ("- Or Introduction 2 over")]         ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyBackwardsOrIntroduction2         history (tail h) ))) )
 applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyAndElimination1)                  = ( giveNumbers (applyAndElimination1                  history (tail h)) number ,         [TRule ("- And Elimination 1 over")]         ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyAndElimination1                  history (tail h) ))) )
 applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyAndElimination2)                  = ( giveNumbers (applyAndElimination2                  history (tail h)) number ,         [TRule ("- And Elimination 2 over")]         ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyAndElimination2                  history (tail h) ))) )
-applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyImplicationElimination)           = ( giveNumbers (applyImplicationElimination           history (tail h)) number ,         [TRule ("- Implication Elimination over")]   ++ [(TNr ((getNr number)+1))] ++ [(TNr ((getNr number)+2))],                              (history ++ (fromJust(applyImplicationElimination           history (tail h) ))) )
-applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyOrElimination)                    = ( giveNumbers (applyOrElimination                    history (tail h)) number ,         [TRule ("- Or Elimination over")]            ++ [(TNr ((getNr number)+1))] ++ [(TNr ((getNr number)+2))] ++ [(TNr ((getNr number)+3))],(history ++ (fromJust(applyOrElimination                    history (tail h) ))) )
+applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyImplicationElimination)           = ( giveNumbers (applyImplicationElimination           history (tail h)) number ,         [TRule ("- Implication Elimination over")]   ++ [(TNr ((getNr number)+2))] ++ [(TNr ((getNr number)+1))],                              (history ++ (fromJust(applyImplicationElimination           history (tail h) ))) )
+applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyOrElimination)                    = ( giveNumbers (applyOrElimination                    history (tail h)) number ,         [TRule ("- Or Elimination over")]            ++ [(TNr ((getNr number)+3))] ++ [(TNr ((getNr number)+2))] ++ [(TNr ((getNr number)+1))],(history ++ (fromJust(applyOrElimination                    history (tail h) ))) )
 applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyNotNotElimination)                = ( giveNumbers (applyNotNotElimination                history (tail h)) number ,         [TRule ("- Not Not Elimination over")]       ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyNotNotElimination                history (tail h) ))) )
-applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyNotElimination)                   = ( giveNumbers (applyNotElimination                   history (tail h)) number ,         [TRule ("- Not Elimination over")]           ++ [(TNr ((getNr number)+1))] ++ [(TNr ((getNr number)+2))],                              (history ++ (fromJust(applyNotElimination                   history (tail h) ))) )
+applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyNotElimination)                   = ( giveNumbers (applyNotElimination                   history (tail h)) number ,         [TRule ("- Not Elimination over")]           ++ [(TNr ((getNr number)+2))] ++ [(TNr ((getNr number)+1))],                              (history ++ (fromJust(applyNotElimination                   history (tail h) ))) )
 --Cazuri speciale pentru bottom
 applyAllOnce history (h : tl) number | (bottomEliminationThenNotElimination history ((tail h) : tl) )                  = ( giveNumbers (applyBackwardsBottomElimination       history (tail h)) number ,         [TRule ("- Bottom Elimination over")]        ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyBackwardsBottomElimination       history (tail h) ))) )
 applyAllOnce history (h : tl) number | (notIntroductionThenNotElimination   history ((tail h) : tl) )                  = ( giveNumbers (applyBackwardsNotIntroduction         history (tail h)) number ,         [TRule ("- Not Introduction over")]          ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyBackwardsNotIntroduction         history (tail h) ))) )
@@ -525,7 +554,8 @@ leadsToSolution :: [[Token]] -> [[Token]] -> ( [[Token]] -> [Token] -> Maybe [[T
 leadsToSolution _ [] _ = False
 --leadsToSolution history _ _ | (length history) > 3 = False
 --leadsToSolution history _ _  | (hasloop history) = False
-leadsToSolution _ (h : _ ) _ | (applyBackwardsAssumption h) = True
+leadsToSolution history (h : [] ) _ | (applyBackwardsAssumption h) = True
+leadsToSolution history (h : tl ) _ | (applyBackwardsAssumption h) = True  && ( hasSolution history tl )
 leadsToSolution history (h : tl) rule | (isJust(rule history h)) && (fromJust(rule history h) /= []) = -- && (areAllResultsProvableWithHistory history (fromJust(rule history h))) =
  leadsToSolution (history ++ (fromJust(rule history h))) ((fromJust(rule history h))++tl) (applyBackwardsAndIntroduction) ||
  leadsToSolution (history ++ (fromJust(rule history h))) ((fromJust(rule history h))++tl) (applyBackwardsImplicationIntroduction) ||
@@ -553,7 +583,7 @@ hasSolution history t | (leadsToSolution history t applyBackwardsAndIntroduction
 hasSolution history t | (leadsToSolution history t applyBackwardsImplicationIntroduction) = True
 hasSolution history t | (leadsToSolution history t applyBackwardsOrIntroduction1) = True
 hasSolution history t | (leadsToSolution history t applyBackwardsOrIntroduction2) = True
-hasSolution history t | (leadsToSolution history t applyBackwardsNotIntroduction) = True
+--hasSolution history t | (leadsToSolution history t applyBackwardsNotIntroduction) = True
 hasSolution history t | (leadsToSolution history t applyAndElimination1) = True
 hasSolution history t | (leadsToSolution history t applyAndElimination2) = True
 hasSolution history t | (leadsToSolution history t applyImplicationElimination) = True
@@ -597,7 +627,18 @@ forwardCheck' -}
 
 -- (((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((())))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
 
+inverseCountOnRow :: [Token] -> Int -> [Token]
+inverseCountOnRow [] _ = []
+inverseCountOnRow ( (TNr x) : tl ) max =  (TNr ( max -x ) ) : (inverseCountOnRow tl max )
+inverseCountOnRow ( h : tl ) max =  ( h ) : (inverseCountOnRow tl max )
 
+inverseCount :: [[Token]] -> Int -> [[Token]]
+inverseCount [] _ = []
+inverseCount (h:tl) max = (inverseCountOnRow h max) : (inverseCount tl max)
+
+orderRules :: Maybe [[Token]] -> Maybe [[Token]]
+orderRules Nothing = Nothing
+orderRules (Just t) = Just (  sortOn (head) ( inverseCount t ( (getMaxNrAsInt t) + 1 ) )  )
 
 
 -- ++ FUNCTIA DE APLICARE A REGULILOR-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -609,15 +650,25 @@ prove _ = Nothing
 
 prove' :: [[Token]] -> [[Token]] -> [Token] -> [[Token]]
 prove' _       (h : []) _ | (applyBackwardsAssumption (tail h)) = (  h ++ [ (TRule "(Assumption)") ] ) : []
-prove' history (h : tl) numbers | isJust (fstOfThree(applyAllOnce history ([h]) (getMaxLineNr (numbers)) )) = (h ++  ( sndOfThree (applyAllOnce history ([h]) (getMaxLineNr (numbers)) ))  ) : ( prove' ( trdOfThree (applyAllOnce history ([h]) (getMaxLineNr (numbers)) )) ((fromJust(fstOfThree( applyAllOnce history ([h]) (getMaxLineNr (numbers)) )) ) ++ tl) (numbers ++ (getAllHeads (h:tl)) ) )
+prove' history (h : tl) numbers | isJust (fstOfThree(applyAllOnce history ([h]) (getMaxLineNr (numbers)) )) = (h ++  ( sndOfThree (applyAllOnce history ([h]) (getMaxLineNr (numbers)) ))  ) : ( prove' ( trdOfThree (applyAllOnce history ([h]) (getMaxLineNr (numbers)) )) ((fromJust(fstOfThree( applyAllOnce history ([h]) (getMaxLineNr (numbers)) )) ) ++ tl) (numbers ++ (getAllHeads (h : fromJust (fstOfThree(applyAllOnce history ([h]) (getMaxLineNr (numbers)) )) )) ) )
 prove' _ [] _ = []
 -- Asta e un fallback. Daca nu intra in nici un caz de mai sus dar are solutie, resetez istoricul
---prove' history (h : tl) | startHasSolution ( [tail h]) = (h ++ [ ( sndOfThree (applyAllOnceInefficienty [h] )) ] ++ [ TRule " -FALLBACK- " ] ) : ( prove' ( history ++ (trdOfThree (applyAllOnceInefficienty ([h]) )) ) ((fromJust(fstOfThree( applyAllOnceInefficienty ([h]) )) ) ++ tl) )
-prove' history _ _ = [[(TRule "^^^^- An Error Occured. Above is history")]] ++ history
+--prove' _ (h : tl) numbers | startHasSolution [h] = (h ++  ( sndOfThree (applyAllOnce [] ([h]) (getMaxLineNr (numbers)) ))  ) : ( prove' ( trdOfThree (applyAllOnce [] ([h]) (getMaxLineNr (numbers)) )) ((fromJust(fstOfThree( applyAllOnce [] ([h]) (getMaxLineNr (numbers)) )) ) ++ tl) (numbers ++ (getAllHeads (h : fromJust (fstOfThree(applyAllOnce [] ([h]) (getMaxLineNr (numbers)) )) )) ) )
+prove' history _ _ = [[(TRule "!!!- An Error Occured. Above is history")]] ++ history
 
 main :: IO ()
 main = do 
-       putStrLn "Formula de logica propozitionala este: "
+       putStrLn "\nScrieti o formula de logica propozitionala sau \"exit\" pentru a opri programul."
        inFormula <- getLine
-       putStrLn ( "\n" ++ showMaybeTokensArray  ( prove (tokenize (inFormula))))
+       if ( inFormula /= "exit" ) then
+        do
+        if ( (canTokenize inFormula) && (isThereATurnistle inFormula) ) then
+         do
+         putStrLn ( "\n" ++ showMaybeTokensArray (   orderRules  ( prove (tokenize (inFormula))) )  )
+         main
+        else
+         do
+         putStrLn "Formula data nu este valida."
+         main
+       else putStrLn ""
 
