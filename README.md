@@ -1,6 +1,6 @@
 Natural deduction prover.
 
-Write a natural deduction formula and the program will print its proof, if it exists.
+Write a natural deduction formula and the program will print its proof, if it was found
 
 Notation: Turniste: "|-" , And: "&" ,Or: "|" ,Implies: "->" ,Not: "!" ,Bottom: "_|_" ,Variable: any string of letters
 
