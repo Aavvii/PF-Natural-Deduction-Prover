@@ -43,7 +43,8 @@ instance Show Formula where
 showTokens :: [Token] -> String
 showTokens [] = []
 showTokens ((TNr x) : tl) = show x ++ ". "++ (showTokens tl)
-showTokens ((TRule x) : tl) = "    " ++ x ++ " " ++ (showTokens tl)
+showTokens ((TRule "Assumption") : tl) = "    -Assumption " ++ (showTokens tl)
+showTokens ((TRule x) : tl) = "    -" ++ x ++ ", " ++ (showTokens tl)
 showTokens ((TVar x) : tl) = x ++ (showTokens tl)
 showTokens (TLParen : tl) = "(" ++ showTokens tl
 showTokens (TRParen : tl) = ")" ++ showTokens tl
@@ -492,20 +493,20 @@ applyAllOnceInefficienty :: [[Token]] -> (Maybe [[Token]] , [Token] , [[Token]])
 applyAllOnceInefficienty t = applyAllOnce t [(TNr 1:(head t))] (TNr 1)
 
 applyAllOnce :: [[Token]] -> [[Token]] -> Token -> (Maybe [[Token]] , [Token] , [[Token]])
-applyAllOnce history (h : _ ) number | applyBackwardsAssumption (tail h)                                               = (Just ([]), [(TRule("(Assumption)"))], (history ))
-applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyBackwardsAndIntroduction)         = ( giveNumbers (applyBackwardsAndIntroduction         history (tail h)) number ,         [TRule ("- And Introduction over")]          ++ [(TNr ((getNr number)+2))] ++ [(TNr ((getNr number)+1))],                              (history ++ (fromJust(applyBackwardsAndIntroduction         history (tail h) ))) )
-applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyBackwardsImplicationIntroduction) = ( giveNumbers (applyBackwardsImplicationIntroduction history (tail h)) number ,         [TRule ("- Implication Introduction over")]  ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyBackwardsImplicationIntroduction history (tail h) ))) )
-applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyBackwardsOrIntroduction1)         = ( giveNumbers (applyBackwardsOrIntroduction1         history (tail h)) number ,         [TRule ("- Or Introduction 1 over")]         ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyBackwardsOrIntroduction1         history (tail h) ))) )
-applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyBackwardsOrIntroduction2)         = ( giveNumbers (applyBackwardsOrIntroduction2         history (tail h)) number ,         [TRule ("- Or Introduction 2 over")]         ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyBackwardsOrIntroduction2         history (tail h) ))) )
-applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyAndElimination1)                  = ( giveNumbers (applyAndElimination1                  history (tail h)) number ,         [TRule ("- And Elimination 1 over")]         ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyAndElimination1                  history (tail h) ))) )
-applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyAndElimination2)                  = ( giveNumbers (applyAndElimination2                  history (tail h)) number ,         [TRule ("- And Elimination 2 over")]         ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyAndElimination2                  history (tail h) ))) )
-applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyImplicationElimination)           = ( giveNumbers (applyImplicationElimination           history (tail h)) number ,         [TRule ("- Implication Elimination over")]   ++ [(TNr ((getNr number)+2))] ++ [(TNr ((getNr number)+1))],                              (history ++ (fromJust(applyImplicationElimination           history (tail h) ))) )
-applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyOrElimination)                    = ( giveNumbers (applyOrElimination                    history (tail h)) number ,         [TRule ("- Or Elimination over")]            ++ [(TNr ((getNr number)+3))] ++ [(TNr ((getNr number)+2))] ++ [(TNr ((getNr number)+1))],(history ++ (fromJust(applyOrElimination                    history (tail h) ))) )
-applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyNotNotElimination)                = ( giveNumbers (applyNotNotElimination                history (tail h)) number ,         [TRule ("- Not Not Elimination over")]       ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyNotNotElimination                history (tail h) ))) )
-applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyNotElimination)                   = ( giveNumbers (applyNotElimination                   history (tail h)) number ,         [TRule ("- Not Elimination over")]           ++ [(TNr ((getNr number)+2))] ++ [(TNr ((getNr number)+1))],                              (history ++ (fromJust(applyNotElimination                   history (tail h) ))) )
+applyAllOnce history (h : _ ) number | applyBackwardsAssumption (tail h)                                               = (Just ([]), [(TRule("Assumption"))], (history ))
+applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyBackwardsAndIntroduction)         = ( giveNumbers (applyBackwardsAndIntroduction         history (tail h)) number ,         [TRule ("And Introduction")]          ++ [(TNr ((getNr number)+1))] ++ [(TNr ((getNr number)+2))],                              (history ++ (fromJust(applyBackwardsAndIntroduction         history (tail h) ))) )
+applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyBackwardsImplicationIntroduction) = ( giveNumbers (applyBackwardsImplicationIntroduction history (tail h)) number ,         [TRule ("Implication Introduction")]  ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyBackwardsImplicationIntroduction history (tail h) ))) )
+applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyBackwardsOrIntroduction1)         = ( giveNumbers (applyBackwardsOrIntroduction1         history (tail h)) number ,         [TRule ("Or Introduction 1")]         ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyBackwardsOrIntroduction1         history (tail h) ))) )
+applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyBackwardsOrIntroduction2)         = ( giveNumbers (applyBackwardsOrIntroduction2         history (tail h)) number ,         [TRule ("Or Introduction 2")]         ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyBackwardsOrIntroduction2         history (tail h) ))) )
+applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyAndElimination1)                  = ( giveNumbers (applyAndElimination1                  history (tail h)) number ,         [TRule ("And Elimination 1")]         ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyAndElimination1                  history (tail h) ))) )
+applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyAndElimination2)                  = ( giveNumbers (applyAndElimination2                  history (tail h)) number ,         [TRule ("And Elimination 2")]         ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyAndElimination2                  history (tail h) ))) )
+applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyImplicationElimination)           = ( giveNumbers (applyImplicationElimination           history (tail h)) number ,         [TRule ("Implication Elimination")]   ++ [(TNr ((getNr number)+1))] ++ [(TNr ((getNr number)+2))],                              (history ++ (fromJust(applyImplicationElimination           history (tail h) ))) )
+applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyOrElimination)                    = ( giveNumbers (applyOrElimination                    history (tail h)) number ,         [TRule ("Or Elimination")]            ++ [(TNr ((getNr number)+1))] ++ [(TNr ((getNr number)+2))] ++ [(TNr ((getNr number)+3))],(history ++ (fromJust(applyOrElimination                    history (tail h) ))) )
+applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyNotNotElimination)                = ( giveNumbers (applyNotNotElimination                history (tail h)) number ,         [TRule ("Not Not Elimination")]       ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyNotNotElimination                history (tail h) ))) )
+applyAllOnce history (h : tl) number | (leadsToSolution history ((tail h) : tl) applyNotElimination)                   = ( giveNumbers (applyNotElimination                   history (tail h)) number ,         [TRule ("Not Elimination")]           ++ [(TNr ((getNr number)+1))] ++ [(TNr ((getNr number)+2))],                              (history ++ (fromJust(applyNotElimination                   history (tail h) ))) )
 --Cazuri speciale pentru bottom
-applyAllOnce history (h : tl) number | (bottomEliminationThenNotElimination history ((tail h) : tl) )                  = ( giveNumbers (applyBackwardsBottomElimination       history (tail h)) number ,         [TRule ("- Bottom Elimination over")]        ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyBackwardsBottomElimination       history (tail h) ))) )
-applyAllOnce history (h : tl) number | (notIntroductionThenNotElimination   history ((tail h) : tl) )                  = ( giveNumbers (applyBackwardsNotIntroduction         history (tail h)) number ,         [TRule ("- Not Introduction over")]          ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyBackwardsNotIntroduction         history (tail h) ))) )
+applyAllOnce history (h : tl) number | (bottomEliminationThenNotElimination history ((tail h) : tl) )                  = ( giveNumbers (applyBackwardsBottomElimination       history (tail h)) number ,         [TRule ("Bottom Elimination")]        ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyBackwardsBottomElimination       history (tail h) ))) )
+applyAllOnce history (h : tl) number | (notIntroductionThenNotElimination   history ((tail h) : tl) )                  = ( giveNumbers (applyBackwardsNotIntroduction         history (tail h)) number ,         [TRule ("Not Introduction")]          ++ [(TNr ((getNr number)+1))],                                                            (history ++ (fromJust(applyBackwardsNotIntroduction         history (tail h) ))) )
 --
 --applyAllOnce history (h : tl) | (leadsToSolution history (h : tl) applyBackwardsNotIntroduction)         = (applyBackwardsNotIntroduction history h ,                TRule ("(Not Introduction)"),         (history ++ (fromJust(applyBackwardsNotIntroduction         history h))) )
 --applyAllOnce history (h : tl) | (leadsToSolution history (h : tl) applyBackwardsBottomElimination)                   = (applyNotElimination history h ,              TRule ("(Not Elimination)"),          (history ++ (fromJust(applyNotElimination                   history h))) )
@@ -555,7 +556,7 @@ leadsToSolution _ [] _ = False
 --leadsToSolution history _ _ | (length history) > 3 = False
 --leadsToSolution history _ _  | (hasloop history) = False
 leadsToSolution history (h : [] ) _ | (applyBackwardsAssumption h) = True
-leadsToSolution history (h : tl ) _ | (applyBackwardsAssumption h) = True  && ( hasSolution history tl )
+leadsToSolution history (h : tl ) _ | (applyBackwardsAssumption h) = True && ( hasSolution history tl )
 leadsToSolution history (h : tl) rule | (isJust(rule history h)) && (fromJust(rule history h) /= []) = -- && (areAllResultsProvableWithHistory history (fromJust(rule history h))) =
  leadsToSolution (history ++ (fromJust(rule history h))) ((fromJust(rule history h))++tl) (applyBackwardsAndIntroduction) ||
  leadsToSolution (history ++ (fromJust(rule history h))) ((fromJust(rule history h))++tl) (applyBackwardsImplicationIntroduction) ||
@@ -602,28 +603,133 @@ startHasSolution t = hasSolution t t
 
 -- (((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((())))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
 
-{-
-giveRowsNumebrs :: Maybe [[Token]] -> Maybe [[Token]]
-giveRowsNumebrs Nothing = Nothing
-giveRowsNumebrs t = Just (giveRowsNumebrs' (  reverse(fromJust t)) 1 )
+--Functii ajutatoare pentru forward checking
+getJustConclusion :: [Token] -> [Token]
+getJustConclusion t = getJustConclusion' (tail t)
 
-giveRowsNumebrs' :: [[Token]] -> Int -> [[Token]]
-giveRowsNumebrs' (h:tl) index = (( TNr index ) : h) : giveRowsNumebrs' tl (index+1)
-giveRowsNumebrs' [] _ = []
+getJustConclusion' :: [Token] -> [Token]
+getJustConclusion' ((TRule _):_) = [] 
+getJustConclusion' (h:tl) = h : (getJustConclusion' tl)
+getJustConclusion' _ = []
 
-checkAndIntroduction :: [Token] -> [Token] -> [Token] -> (Bool, [Token] )
-checkAndIntroduction (nr1:pr1) (nr2:pr2) (cnr:conclusion) = if ( ( getLeftOfTurnstile pr1 == getLeftOfTurnstile pr2 ) && ( conclusion == ( (getLeftOfTurnstile pr1) ++ [TLParen] ++ (getRightOfTurnstile pr1) ++ [TAnd] ++ (getRightOfTurnstile pr2) ++ [TRParen]) ) ) then (True, [cnr] ++ conclusion ++ [TRule "And introduction"] ++ [nr1] ++ [nr2]) else (False,[])
+getJustConclusions :: [[Token]] -> [[Token]]
+getJustConclusions (h:tl) = ( getJustConclusion h ) : ( getJustConclusions tl )
+getJustConclusions _ = []
 
+getJustRule :: [Token] -> String
+getJustRule ((TRule x):_) = x
+getJustRule (h:tl) = getJustRule tl
+getJustRule _ = []
 
+getJustLineNrs :: [Token] -> [Token]
+getJustLineNrs ((TRule x):tl) = tl
+getJustLineNrs ( h : tl ) = getJustLineNrs tl
+getJustLineNrs _ = []
 
+numberIsInList :: Token -> [Token] -> Bool
+numberIsInList nr (h : _ ) | nr == h = True
+numberIsInList nr (h : tl) = numberIsInList nr tl
+numberIsInList nr [] = False
+
+getLinesWithTheseNumbers :: [[Token]] -> [Token] -> [[Token]]
+getLinesWithTheseNumbers [] numbers     = []
+getLinesWithTheseNumbers (h:tl) numbers | ( numberIsInList (head h) numbers ) = h : ( getLinesWithTheseNumbers tl numbers )
+getLinesWithTheseNumbers (h:tl) numbers = ( getLinesWithTheseNumbers tl numbers )
+
+getPremise :: [[Token]] -> [Token] -> [[Token]]
+getPremise all line =  getJustConclusions ( (getLinesWithTheseNumbers all (getJustLineNrs line) ) )
+
+getIndexOfOperationAfterTurniste :: [Token] -> Token -> Int
+getIndexOfOperationAfterTurniste [] goal = 0
+getIndexOfOperationAfterTurniste (TTurnstile : tl) goal =  (getIndexOfOperationAfterTurniste' tl goal 1)
+getIndexOfOperationAfterTurniste (h : tl) goal           = (getIndexOfOperationAfterTurniste tl goal)+1
+
+getIndexOfOperationAfterTurniste' :: [Token] -> Token -> Int -> Int
+getIndexOfOperationAfterTurniste' (h:_) goal index | h == goal = index
+getIndexOfOperationAfterTurniste' (h : tl) goal index = (getIndexOfOperationAfterTurniste' tl) goal (index+1)
+getIndexOfOperationAfterTurniste' _ _ _ = 0
+
+whatRuleToApply :: String -> ( [Token] -> [[Token]] -> Bool )
+whatRuleToApply "And Introduction"         = checkAndIntroduction
+whatRuleToApply "And Elimination 1"        = checkAndElimination1
+whatRuleToApply "And Elimination 2"        = checkAndElimination2
+whatRuleToApply "Implication Elimination"  = checkImplicationElimination
+whatRuleToApply "Implication Introduction" = checkImplicationIntroduction
+whatRuleToApply "Or Introduction 1"        = checkOrIntroduction1
+whatRuleToApply "Or Introduction 2"        = checkOrIntroduction2
+whatRuleToApply "Or Elimination"           = checkOrElimination
+whatRuleToApply "Not Elimination"          = checkNotElimination
+whatRuleToApply "Not Introduction"         = checkNotIntroduction
+whatRuleToApply "Bottom Elimination"       = checkBottomElimination
+whatRuleToApply "Not Not Elimination"      = checkNotNotIntroduction
+whatRuleToApply _ = (\x y -> False )
+
+-----------------------------------------------
 
 forwardCheck :: Maybe [[Token]] -> Maybe [[Token]]
+--forwardCheck t = t
 forwardCheck t | isNothing t = Nothing
-forwardCheck t = Just (forwardCheck' (fromJust t) )
+forwardCheck t | isValidProof ( fromJust t ) ( fromJust t ) = t
+forwardCheck _ = Nothing -- <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< AICI
 
-forwardCheck' :: [[Token]] -> [[Token]]
-forwardCheck' (h:tl) | fst (checkLine h) = (snd(checkLine h)) : (forwardCheck' tl)
-forwardCheck' -}
+isValidProof :: [[Token]] -> [[Token]] -> Bool
+isValidProof [] _ = True
+isValidProof (h:tl) all | ( isValidLine h all ) = isValidProof tl all
+isValidProof _ _ = False
+
+isValidLine :: [Token] -> [[Token]] -> Bool
+isValidLine line _ | (getJustRule line) == "Assumption" = True
+isValidLine line all = (whatRuleToApply (getJustRule line) ) (getJustConclusion line) (getPremise all line)
+
+--Aici am functiile de verificare forward pentru fiecare regula
+
+checkAndIntroduction :: [Token] -> [[Token]] -> Bool
+checkAndIntroduction conc (p2:p1:[]) = if ( ( (getLeftOfTurnstile p1) == (getLeftOfTurnstile p2) )  && ( conc == ( (getLeftOfTurnstile p1) ++ [TLParen] ++ (getRightOfTurnstile p1) ++ [TAnd] ++ ( getRightOfTurnstile p2 ) ++ [TRParen] ) )  ) then True else False
+checkAndIntroduction _ _ = False
+
+checkAndElimination1 :: [Token] -> [[Token]] -> Bool
+checkAndElimination1 conc (p:[]) | (isJust ( findRightSideAplicationPoint p TAnd) )= if ( conc == ( (getLeftOfTurnstile p) ++ ( getLeftArgument p (fromJust ( findRightSideAplicationPoint p TAnd) ) ) ) ) then True else False
+checkAndElimination1 _ _ = False
+
+checkAndElimination2 :: [Token] -> [[Token]] -> Bool
+checkAndElimination2 conc (p:[]) | (isJust ( findRightSideAplicationPoint p TAnd) )= if ( conc == ( (getLeftOfTurnstile p) ++ ( getRightArgument p (fromJust ( findRightSideAplicationPoint p TAnd) ) ) ) ) then True else False
+checkAndElimination2 _ _ = False
+
+checkImplicationElimination :: [Token] -> [[Token]] -> Bool
+checkImplicationElimination conc (p2:p1:[]) | (isJust ( findRightSideAplicationPoint p1 TImplies) ) = if ( ( p2 == ((getLeftOfTurnstile p1) ++ ( getLeftArgument p1 (fromJust ( findRightSideAplicationPoint p1 TImplies) ) ) ) ) && ( (getLeftOfTurnstile p1) == (getLeftOfTurnstile p2) ) && (conc == ( (getLeftOfTurnstile p1) ++ ( getRightArgument p1 (fromJust ( findRightSideAplicationPoint p1 TImplies) ) ) ) ) ) then True else False
+checkImplicationElimination _ _ = False
+
+checkImplicationIntroduction :: [Token] -> [[Token]] -> Bool
+checkImplicationIntroduction conc (p:[]) | (isJust ( findRightSideAplicationPoint conc TImplies) ) = if ( (checkIfElementExists p (getLeftArgument conc (fromJust ( findRightSideAplicationPoint conc TImplies) )) ) && ((getRightOfTurnstile p) == (getRightArgument conc (fromJust ( findRightSideAplicationPoint conc TImplies) )) ) ) then True else False
+checkImplicationIntroduction _ _ = False
+
+checkOrIntroduction1 :: [Token] -> [[Token]] -> Bool
+checkOrIntroduction1 conc (p:[]) | (isJust ( findRightSideAplicationPoint conc TOr) )= if ( (getRightOfTurnstile p) == (getLeftArgument conc (fromJust ( findRightSideAplicationPoint conc TOr) )) ) then True else False
+checkOrIntroduction1 _ _ = False
+
+checkOrIntroduction2 :: [Token] -> [[Token]] -> Bool
+checkOrIntroduction2 conc (p:[]) | (isJust ( findRightSideAplicationPoint conc TOr) )= if ( (getRightOfTurnstile p) == (getRightArgument conc (fromJust ( findRightSideAplicationPoint conc TOr) )) ) then True else False
+checkOrIntroduction2 _ _ = False
+
+checkOrElimination :: [Token] -> [[Token]] -> Bool
+checkOrElimination conc (p3:p2:p1:[]) | (isJust ( findRightSideAplicationPoint p1 TOr) ) = if ( (checkIfElementExists (getLeftOfTurnstile p2) ( getLeftArgument p1 (fromJust ( findRightSideAplicationPoint p1 TOr) ) )) && (checkIfElementExists (getLeftOfTurnstile p3) ( getRightArgument p1 (fromJust ( findRightSideAplicationPoint p1 TOr) ) )) && ( (getRightOfTurnstile conc) == (getRightOfTurnstile p2) ) && ( (getRightOfTurnstile conc) == (getRightOfTurnstile p3) ) ) then True else False
+checkOrElimination _ _ = False
+
+checkNotElimination :: [Token] -> [[Token]] -> Bool
+checkNotElimination conc (p2:p1:[]) = if ( ( (getRightOfTurnstile conc) == [TBottom] ) && ( (getRightOfTurnstile p2) == ( [TLParen] ++ [TNot] ++ (getRightOfTurnstile p1) ++ [TRParen] )) ) then True else False
+checkNotElimination _ _ = False
+
+checkNotIntroduction :: [Token] -> [[Token]] -> Bool
+checkNotIntroduction conc (p:[]) | (isJust ( findRightSideAplicationPoint conc TNot) ) = if ( checkIfElementExists p (getRightArgument conc (fromJust ( findRightSideAplicationPoint conc TNot) )) ) then True else False
+checkNotIntroduction _ _ = False
+
+checkBottomElimination :: [Token] -> [[Token]] -> Bool
+checkBottomElimination conc (p:[]) = if ( (getRightOfTurnstile p) == [TBottom] ) then True else False
+checkBottomElimination _ _ = False
+
+checkNotNotIntroduction :: [Token] -> [[Token]] -> Bool
+checkNotNotIntroduction conc (p:[]) = if ( (getRightOfTurnstile p) == ( [TLParen] ++ [TNot] ++ [TLParen] ++ [TNot] ++ (getRightOfTurnstile conc) ++ [TRParen] ++ [TRParen] ) ) then True else False
+checkNotNotIntroduction _ _ = False
 
 -- (((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((())))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
 
@@ -649,7 +755,7 @@ prove start  | startHasSolution (start:[])  = Just (prove' ( [start] ) ( [[TNr 1
 prove _ = Nothing
 
 prove' :: [[Token]] -> [[Token]] -> [Token] -> [[Token]]
-prove' _       (h : []) _ | (applyBackwardsAssumption (tail h)) = (  h ++ [ (TRule "(Assumption)") ] ) : []
+prove' _       (h : []) _ | (applyBackwardsAssumption (tail h)) = (  h ++ [ (TRule "Assumption") ] ) : []
 prove' history (h : tl) numbers | isJust (fstOfThree(applyAllOnce history ([h]) (getMaxLineNr (numbers)) )) = (h ++  ( sndOfThree (applyAllOnce history ([h]) (getMaxLineNr (numbers)) ))  ) : ( prove' ( trdOfThree (applyAllOnce history ([h]) (getMaxLineNr (numbers)) )) ((fromJust(fstOfThree( applyAllOnce history ([h]) (getMaxLineNr (numbers)) )) ) ++ tl) (numbers ++ (getAllHeads (h : fromJust (fstOfThree(applyAllOnce history ([h]) (getMaxLineNr (numbers)) )) )) ) )
 prove' _ [] _ = []
 -- Asta e un fallback. Daca nu intra in nici un caz de mai sus dar are solutie, resetez istoricul
@@ -661,14 +767,19 @@ main = do
        putStrLn "\nScrieti o formula de logica propozitionala sau \"exit\" pentru a opri programul."
        inFormula <- getLine
        if ( inFormula /= "exit" ) then
-        do
-        if ( (canTokenize inFormula) && (isThereATurnistle inFormula) ) then
-         do
-         putStrLn ( "\n" ++ showMaybeTokensArray (   orderRules  ( prove (tokenize (inFormula))) )  )
-         main
-        else
-         do
-         putStrLn "Formula data nu este valida."
-         main
+          do
+          if ( (canTokenize inFormula) && (isThereATurnistle inFormula) ) then
+            do
+            if ( (isNothing (prove (tokenize (inFormula))) )  ) then
+               putStrLn "Nu a fost gasita o demonstratie."
+            else
+               if ( (isNothing( forwardCheck ( orderRules  ( prove ( tokenize inFormula )) ) ))  ) then
+                  putStrLn "O demonstratie a fost gasita dar verificarea finala a esuat."
+               else
+                  putStrLn ( "\n" ++ showMaybeTokensArray ( forwardCheck ( orderRules  ( prove (tokenize (inFormula))) ) ) )
+                  --main
+           else
+               do
+               putStrLn "Formula data nu este valida."
+               --main
        else putStrLn ""
-
